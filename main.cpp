@@ -69,9 +69,8 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE, LPSTR, int)
 {
     srand((unsigned int)time(nullptr));
 
-    printf("=== Dogeza Sliding: School Background Zoom Version ===\n");
-    printf("Space: start / prone slide, R: restart, ESC: quit\n");
-    printf("Receiver is anchored to the school background zoom. Hidden judgement lines are replaced by a progressive multi-layer halo, camera shake, result image effects, camera-impact feedback, map color grading, improved UI, and no receiver-side translucent quad.\n\n");
+    printf("=== Dogeza Sliding: Simplified Component Version ===\n");
+    printf("Space: title / run / prone slide / next round, R: restart, ESC: quit\n\n");
 
     GameLoop gEngine;
     gEngine.Initialize(hI, GlobalWndProc);
@@ -118,50 +117,29 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE, LPSTR, int)
 
     std::vector<Mesh*> meshes = { colorQuadMesh, textureQuadMesh };
     std::vector<Material*> materials = {
-        topBarMat, bottomBarMat,
+        topBarMat, bottomBarMat, titleBackdropMat,
         backgroundMat, playerRunMat, playerProneMat, receiverTexMat, fontMat,
         resultPerfectMat, resultGreatMat, resultGoodMat, resultFailMat, titleCardMat
     };
     std::vector<Texture*> textures = { backgroundTex, backgroundShortTex, backgroundLongTex, playerRunTex, playerProneTex, receiverTex, fontTex, resultPerfectTex, resultGreatTex, resultGoodTex, resultFailTex, titleCardTex };
 
     GameObject* manager = new GameObject(0.0f, 0.0f, 0.0f, "GameManagerObject");
-
-    auto* mapRandomizer = new MapRandomizerComponent();
-    auto* depthTarget = new DepthTargetComponent();
-    auto* playerMotion = new ProneSlideComponent();
-    auto* followCamera = new FollowCameraComponent(playerMotion);
-    auto* judge = new JudgeComponent(playerMotion, depthTarget);
-    auto* score = new ScoreComponent();
-
-    auto* fsm = new GameStateMachineComponent(
-        mapRandomizer,
-        depthTarget,
-        playerMotion,
-        followCamera,
-        judge,
-        score);
-
-    manager->AddComponent(mapRandomizer);
-    manager->AddComponent(depthTarget);
-    manager->AddComponent(playerMotion);
-    manager->AddComponent(judge);
-    manager->AddComponent(score);
-    manager->AddComponent(fsm);
-    manager->AddComponent(followCamera);
-
-    GameObject* background = new GameObject(0.0f, 0.0f, 0.0f, "SchoolBackgroundZoom");
-    auto* backgroundZoom = new BackgroundZoomComponent(backgroundMat, followCamera, mapRandomizer, backgroundTex, backgroundShortTex, backgroundLongTex);
-    background->AddComponent(backgroundZoom);
-    gEngine.world.push_back(background);
+    auto* game = new DogezaGameComponent();
+    manager->AddComponent(game);
     gEngine.world.push_back(manager);
 
+    GameObject* background = MakeRenderObject("SchoolBackgroundZoom", textureQuadMesh, backgroundMat);
+    auto* stageView = new StageViewComponent(game, backgroundMat, backgroundTex, backgroundShortTex, backgroundLongTex);
+    background->AddComponent(stageView);
+    gEngine.world.push_back(background);
+
     GameObject* receiver = MakeRenderObject("DogezaReceiverNPC", textureQuadMesh, receiverTexMat);
-    receiver->AddComponent(new ReceiverVisualComponent(backgroundZoom, depthTarget));
+    receiver->AddComponent(new ReceiverSpriteComponent(game, stageView));
     gEngine.world.push_back(receiver);
 
     GameObject* player = MakeRenderObject("PlayerDogezaSlider", textureQuadMesh, playerRunMat);
     MeshRenderer* playerRenderer = player->GetComponent<MeshRenderer>();
-    player->AddComponent(new PlayerVisualComponent(followCamera, playerMotion, playerRenderer, playerRunMat, playerProneMat));
+    player->AddComponent(new PlayerSpriteComponent(game, stageView, playerRenderer, playerRunMat, playerProneMat));
     gEngine.world.push_back(player);
 
     GameObject* topBar = MakeRenderObject("TopHudBar", colorQuadMesh, topBarMat);
@@ -175,24 +153,25 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE, LPSTR, int)
     gEngine.world.push_back(bottomBar);
 
     GameObject* titleBackdrop = MakeRenderObject("TitleBackdrop", colorQuadMesh, titleBackdropMat);
-    titleBackdrop->AddComponent(new TitleBackdropComponent(fsm, titleBackdropMat));
+    titleBackdrop->AddComponent(new GameUiComponent(game, titleBackdropMat));
     gEngine.world.push_back(titleBackdrop);
 
     GameObject* titleCard = MakeRenderObject("TitleCard", textureQuadMesh, titleCardMat);
-    titleCard->AddComponent(new TitleOverlayComponent(fsm, 0.0f, 0.16f, 1.52f, 0.56f));
+    MeshRenderer* titleRenderer = titleCard->GetComponent<MeshRenderer>();
+    titleCard->AddComponent(new GameUiComponent(game, titleRenderer, 0.0f, 0.16f, 1.52f, 0.56f));
     gEngine.world.push_back(titleCard);
 
     GameObject* hud = new GameObject(0.0f, 0.0f, 0.0f, "BitmapFontHUD");
-    hud->AddComponent(new BitmapFontHudComponent(fontMat, fsm, mapRandomizer, playerMotion, depthTarget, judge, score));
+    hud->AddComponent(new GameUiComponent(fontMat, game));
     gEngine.world.push_back(hud);
 
     GameObject* resultImage = MakeRenderObject("ResultImageOverlay", textureQuadMesh, resultPerfectMat);
     MeshRenderer* resultRenderer = resultImage->GetComponent<MeshRenderer>();
-    resultImage->AddComponent(new ResultImageOverlayComponent(fsm, judge, resultRenderer, resultPerfectMat, resultGreatMat, resultGoodMat, resultFailMat));
+    resultImage->AddComponent(new GameUiComponent(game, resultRenderer, resultPerfectMat, resultGreatMat, resultGoodMat, resultFailMat));
     gEngine.world.push_back(resultImage);
 
-    mapRandomizer->SelectRandomMap();
-    depthTarget->Randomize();
+    game->SelectRandomMap();
+    game->RandomizeReceiver();
 
     gEngine.Run();
 
