@@ -23,7 +23,7 @@ DirectX 11 기반 원버튼 타이밍 액션 게임입니다.
 | 키 | 기능 |
 | --- | --- |
 | `Space` | 타이틀 진행 / 달리기 시작 / 도게자 슬라이딩 시작 / 다음 라운드 진행 |
-| `R` | 결과 화면에서 라운드 재시작 |
+| `R` | 라운드 재시작 |
 | `ESC` | 게임 종료 |
 
 ## 4. 게임 진행 순서
@@ -32,44 +32,20 @@ DirectX 11 기반 원버튼 타이밍 액션 게임입니다.
 TITLE → READY → APPROACH → PRONE_SLIDE → JUDGE → RESULT
 ```
 
-### TITLE
-
-게임 제목 화면입니다.  
-`Space`를 누르면 게임 라운드가 준비됩니다.
-
-### READY
-
-이번 라운드의 맵이 정해지고, 플레이어와 리시버 위치가 초기화됩니다.  
-`Space`를 누르면 플레이어가 리시버 방향으로 달리기 시작합니다.
-
-### APPROACH
-
-플레이어가 앞으로 달리는 상태입니다.  
-리시버와의 거리를 보고 적절한 순간에 `Space`를 누르면 도게자 슬라이딩이 시작됩니다.
-
-### PRONE_SLIDE
-
-플레이어가 엎드린 자세로 미끄러지는 상태입니다.  
-맵마다 관성 시간이 다르기 때문에 같은 타이밍에 눌러도 멈추는 위치가 달라집니다.
-
-### JUDGE
-
-플레이어가 멈춘 위치와 리시버의 위치를 비교해서 판정을 계산합니다.
-
-### RESULT
-
-판정 결과와 점수가 표시됩니다.  
-`Space` 또는 `R`을 누르면 다음 라운드를 시작합니다.
+- `TITLE`: 게임 제목 화면입니다.
+- `READY`: 맵과 리시버 위치가 정해지고 시작을 기다립니다.
+- `APPROACH`: 플레이어가 리시버 방향으로 달립니다.
+- `PRONE_SLIDE`: 도게자 자세로 미끄러집니다.
+- `JUDGE`: 정지 위치와 리시버 위치를 비교합니다.
+- `RESULT`: 판정 결과와 점수를 표시합니다.
 
 ## 5. 맵 종류
 
-게임은 라운드마다 세 가지 맵 중 하나를 랜덤으로 선택합니다.
-
 | 맵 | 특징 |
 | --- | --- |
-| STOP | 도게자 입력 후 거의 바로 멈추는 맵 |
-| SHORT | 짧은 관성이 적용되는 맵 |
-| LONG | 긴 관성이 적용되는 맵 |
+| MAP A | 도게자 입력 후 거의 바로 멈추는 맵 |
+| MAP B | 1.5초 관성이 적용되는 맵 |
+| MAP C | 3.0초 관성이 적용되는 맵 |
 
 맵마다 배경 이미지와 관성 시간이 다르므로, 현재 맵의 특성에 맞춰 입력 타이밍을 조절해야 합니다.
 
@@ -85,8 +61,6 @@ TITLE → READY → APPROACH → PRONE_SLIDE → JUDGE → RESULT
 | `거리 <= 0` | FAIL |
 | `거리 > 120` | FAIL |
 
-핵심은 리시버를 지나치지 않고, 가능한 한 가까이 멈추는 것입니다.
-
 ## 7. 점수 규칙
 
 | 판정 | 점수 |
@@ -97,49 +71,41 @@ TITLE → READY → APPROACH → PRONE_SLIDE → JUDGE → RESULT
 | FAIL | 현재 점수 0점으로 초기화 |
 
 - `SCORE`: 현재 연속 점수입니다.
-- `BEST`: 게임을 진행하면서 기록한 최고 점수입니다.
+- `BEST`: 최고 점수입니다.
 - `LAST`: 직전 라운드에서 얻은 점수입니다.
 
-## 8. 화면 구성
+## 8. 단순화된 컴포넌트 구조
 
-- 타이틀 이미지: 게임 시작 화면을 표시합니다.
-- 플레이어 캐릭터: 달리기 상태와 도게자 상태에 따라 이미지가 바뀝니다.
-- 리시버 캐릭터: 플레이어가 멈춰야 하는 목표 지점입니다.
-- 상단 HUD: 현재 점수, 최고 점수, 맵 정보, 안내 문구를 표시합니다.
-- 결과 이미지: `PERFECT`, `GREAT`, `GOOD`, `FAIL` 판정을 표시합니다.
+기존에는 게임 규칙, 판정, 점수, 카메라, UI가 여러 컴포넌트로 나뉘어 있었습니다.  
+발표와 유지보수를 쉽게 하기 위해 게임 전용 컴포넌트를 5개로 압축했습니다.
+
+| 컴포넌트 | 역할 |
+| --- | --- |
+| `DogezaGameComponent` | 게임 상태, 맵 선택, 플레이어 이동, 도게자 슬라이딩, 판정, 점수, 카메라 Z 관리 |
+| `StageViewComponent` | 맵별 배경 표시, 배경 줌, 월드 Z 좌표를 화면 좌표로 변환 |
+| `PlayerSpriteComponent` | 플레이어 위치 표시, 달리기/도게자 이미지 전환 |
+| `ReceiverSpriteComponent` | 리시버 위치 표시 |
+| `GameUiComponent` | 타이틀, HUD, 결과 이미지 표시 |
 
 ## 9. 프로젝트 구조
 
-### 핵심 엔진 구조
+### 엔진 / 프레임워크
 
 - `GameLoop.hpp`: 입력, 업데이트, 렌더링 루프 관리
 - `ObjectBase.hpp`: `GameObject`와 `Component` 기본 구조
 - `GraphicsContext.hpp`: DirectX 11 장치, 스왑체인, 렌더 상태 관리
+- `WindowContext.hpp`: 윈도우 생성과 메시지 처리
+- `Timer.hpp`: 델타타임 계산
 - `Mesh.hpp`: 정점 버퍼 생성
 - `Material.hpp`: 색상/텍스처 머티리얼 관리
 - `MeshRenderer.hpp`: 메시 렌더링 컴포넌트
 - `Texture.hpp`: PNG 텍스처 로드
 
-### 게임 로직
+### 게임 코드
 
 - `DogezaTypes.hpp`: 게임 상태, 맵 타입, 판정 타입 정의
-- `DogezaComponents.hpp`: 게임 전용 컴포넌트 모음
+- `DogezaComponents.hpp`: 게임 전용 컴포넌트 5개 구현
 - `main.cpp`: 리소스 로드, 오브젝트 생성, 컴포넌트 조립, 게임 실행
-
-### 주요 게임 컴포넌트
-
-- `MapRandomizerComponent`: 맵 랜덤 선택과 관성 시간 제공
-- `DepthTargetComponent`: 리시버 목표 위치 관리
-- `ProneSlideComponent`: 플레이어 이동과 도게자 슬라이딩 처리
-- `JudgeComponent`: 정지 위치를 기준으로 판정 계산
-- `ScoreComponent`: 현재 점수, 최고 점수, 직전 점수 관리
-- `GameStateMachineComponent`: 게임 상태 전환 관리
-- `FollowCameraComponent`: 플레이어 깊이 위치를 따라가는 카메라 처리
-- `BackgroundZoomComponent`: 맵별 배경 표시와 화면 좌표 변환
-- `PlayerVisualComponent`: 플레이어 이미지 상태 전환
-- `ReceiverVisualComponent`: 리시버 위치 표시
-- `BitmapFontHudComponent`: 점수와 안내 문구 표시
-- `ResultImageOverlayComponent`: 결과 판정 이미지 표시
 
 ## 10. 필요 환경
 
@@ -148,16 +114,9 @@ TITLE → READY → APPROACH → PRONE_SLIDE → JUDGE → RESULT
 - x64 빌드 환경
 - DirectX 11 지원 그래픽 환경
 
-## 11. 플레이 팁
+## 11. 개발 의도
 
-- `STOP` 맵은 리시버 근처에서 바로 눌러도 됩니다.
-- `SHORT` 맵은 약간 일찍 눌러야 합니다.
-- `LONG` 맵은 관성이 길기 때문에 더 멀리서 눌러야 합니다.
-- 리시버를 지나치면 무조건 실패하므로, 처음에는 조금 멀리 멈추는 쪽으로 연습하는 것이 좋습니다.
+강의에서 제공된 `GameLoop - GameObject - Component` 구조는 유지했습니다.  
+다만 발표 난이도를 낮추기 위해 게임 전용 컴포넌트를 세분화하지 않고, 핵심 역할 기준으로 5개만 남겼습니다.
 
-## 12. 개발 의도
-
-이 프로젝트는 강의에서 제공된 `GameLoop - GameObject - Component` 구조를 유지하면서, 간단한 원버튼 타이밍 게임을 구현한 예제입니다.
-
-게임 로직을 `main.cpp`에 직접 작성하지 않고, 이동, 판정, 점수, 상태 전환, 화면 표시를 각각 컴포넌트로 분리했습니다.  
-이를 통해 기능별 역할이 명확해지고, 특정 기능을 수정할 때 다른 기능에 주는 영향을 줄일 수 있도록 구성했습니다.
+`main.cpp`는 게임 규칙을 직접 처리하지 않고, 리소스를 만들고 `GameObject`에 컴포넌트를 조립하는 역할만 담당합니다.
