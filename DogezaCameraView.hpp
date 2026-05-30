@@ -91,8 +91,6 @@ public:
         p.x = worldX * (laneHalf / 0.95f);
         p.y = -0.86f + (0.46f + 0.86f) * t;
         p.scale = 1.12f + (0.28f - 1.12f) * t;
-        p.laneHalf = laneHalf;
-        p.relativeZ = relZ;
         p.visible = relZ > -120.0f && relZ < 1170.0f;
         return p;
     }
@@ -119,8 +117,6 @@ public:
         ProjectedPoint p;
         p.x = ((baseU - u0) / cropW) * 2.0f - 1.0f;
         p.y = 1.0f - ((baseV - v0) / cropH) * 2.0f;
-        p.relativeZ = worldZ - (game ? game->GetCameraZ() : 0.0f);
-        p.laneHalf = 0.20f + 0.55f * laneT;
         p.scale = (0.32f + 0.95f * laneT) * CurrentZoom();
         p.visible = baseU >= u0 - 0.08f && baseU <= u1 + 0.08f &&
             baseV >= v0 - 0.08f && baseV <= v1 + 0.08f;
