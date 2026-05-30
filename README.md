@@ -1,105 +1,163 @@
-# Dogeza Sliding - Simplified Core Build
+# 고멘나사이! 도게자 슬라이딩
 
-Lecture06-Modulization 구조를 기반으로 만든 원버튼 타이밍 게임입니다.
-기존 `GameLoop -> GameObject -> Component` 구조를 유지하고, 게임에 필요한 핵심 기능만 컴포넌트로 분리했습니다.
+DirectX 11 기반 원버튼 타이밍 액션 게임입니다.  
+플레이어는 달려가다가 적절한 순간에 도게자 자세로 미끄러져, 리시버 앞에 최대한 가깝게 멈춰야 합니다.
 
-## Controls
+## 1. 게임 목표
 
-- Space: title confirm / start approach / prone slide
-- R: restart round
-- ESC: quit
+리시버를 지나치지 않으면서 최대한 가까운 위치에 정지하는 것이 목표입니다.
 
-## Game Rule
+- 너무 멀리 멈추면 낮은 판정 또는 실패가 됩니다.
+- 리시버를 지나치거나 충돌하면 실패합니다.
+- 좋은 판정을 받을수록 점수가 올라갑니다.
+- 실패하면 현재 점수는 0점으로 초기화되지만, 최고 점수는 유지됩니다.
 
-플레이어는 리시버 앞에서 최대한 가깝게 멈춰야 합니다.
+## 2. 실행 방법
 
-- `playerZ >= receiverZ`: FAIL
-- `0 < receiverZ - playerZ <= 25`: PERFECT
-- `25 < receiverZ - playerZ <= 60`: GREAT
-- `60 < receiverZ - playerZ <= 120`: GOOD
-- `120 < receiverZ - playerZ`: FAIL
+1. `DogezaSliding.sln` 파일을 Visual Studio 2022에서 엽니다.
+2. 빌드 구성을 `Debug` 또는 `Release`, 플랫폼을 `x64`로 설정합니다.
+3. 빌드 후 실행합니다.
 
-## Score Rule
+## 3. 조작 방법
 
-- PERFECT: +1000
-- GREAT: +700
-- GOOD: +300
-- FAIL: current score reset to 0
-- BEST score is preserved
+| 키 | 기능 |
+| --- | --- |
+| `Space` | 타이틀 진행 / 달리기 시작 / 도게자 슬라이딩 시작 / 다음 라운드 진행 |
+| `R` | 결과 화면에서 라운드 재시작 |
+| `ESC` | 게임 종료 |
 
-## Core Components
+## 4. 게임 진행 순서
 
-- `MapRandomizerComponent`: selects one of three map rules
-- `DepthTargetComponent`: stores receiver target Z position
-- `ProneSlideComponent`: controls approach and prone slide movement
-- `JudgeComponent`: calculates final distance and result
-- `ScoreComponent`: manages current score, best score, and last score
-- `GameStateMachineComponent`: controls TITLE / READY / APPROACH / PRONE_SLIDE / JUDGE / RESULT
-- `FollowCameraComponent`: follows player depth position
-- `BackgroundZoomComponent`: displays map background and projects world Z to screen
-- `PlayerVisualComponent`: switches player run/prone texture
-- `ReceiverVisualComponent`: places receiver on the background track
-- `TitleOverlayComponent`: controls title image visibility
-- `TitleBackdropComponent`: controls title backdrop
-- `BitmapFontHudComponent`: renders score, map, and guide text
-- `ResultImageOverlayComponent`: displays PERFECT / GREAT / GOOD / FAIL result texture
+```text
+TITLE → READY → APPROACH → PRONE_SLIDE → JUDGE → RESULT
+```
 
-## Files
+### TITLE
 
-### Engine / Framework
+게임 제목 화면입니다.  
+`Space`를 누르면 게임 라운드가 준비됩니다.
 
-- `Framework.hpp`
-- `GraphicsContext.hpp`
-- `WindowContext.hpp`
-- `Timer.hpp`
-- `ObjectBase.hpp`
-- `GameLoop.hpp`
-- `Material.hpp`
-- `Mesh.hpp`
-- `MeshRenderer.hpp`
-- `Texture.hpp`
+### READY
 
-### Game
+이번 라운드의 맵이 정해지고, 플레이어와 리시버 위치가 초기화됩니다.  
+`Space`를 누르면 플레이어가 리시버 방향으로 달리기 시작합니다.
 
-- `DogezaTypes.hpp`
-- `DogezaComponents.hpp`
-- `main.cpp`
+### APPROACH
 
-### Shaders
+플레이어가 앞으로 달리는 상태입니다.  
+리시버와의 거리를 보고 적절한 순간에 `Space`를 누르면 도게자 슬라이딩이 시작됩니다.
 
-- `effect.hlsl`
-- `texture.hlsl`
+### PRONE_SLIDE
 
-### Assets
+플레이어가 엎드린 자세로 미끄러지는 상태입니다.  
+맵마다 관성 시간이 다르기 때문에 같은 타이밍에 눌러도 멈추는 위치가 달라집니다.
 
-- `assets/bg_map_stop.png`
-- `assets/bg_map_short.png`
-- `assets/bg_map_long.png`
-- `assets/player_run.png`
-- `assets/player_prone.png`
-- `assets/receiver.png`
-- `assets/font_atlas.png`
-- `assets/title_card.png`
-- `assets/result_perfect.png`
-- `assets/result_great.png`
-- `assets/result_good.png`
-- `assets/result_fail.png`
+### JUDGE
 
-## Removed From Final Simplified Build
+플레이어가 멈춘 위치와 리시버의 위치를 비교해서 판정을 계산합니다.
 
-The following files/features were removed because they were not part of the core gameplay explanation:
+### RESULT
 
-- post-processing bloom shader files
-- unused original background image file
-- unused receiver halo image file
-- proximity halo components
-- result flash / halo burst / fail slash effects
-- camera shake effect
-- distance meter
-- console debug HUD
-- unused `PlayerControl.hpp` sample component
+판정 결과와 점수가 표시됩니다.  
+`Space` 또는 `R`을 누르면 다음 라운드를 시작합니다.
 
-## Build
+## 5. 맵 종류
 
-Open `DogezaSliding.sln` in Visual Studio 2022 and build Debug x64.
-The project uses `/utf-8`.
+게임은 라운드마다 세 가지 맵 중 하나를 랜덤으로 선택합니다.
+
+| 맵 | 특징 |
+| --- | --- |
+| STOP | 도게자 입력 후 거의 바로 멈추는 맵 |
+| SHORT | 짧은 관성이 적용되는 맵 |
+| LONG | 긴 관성이 적용되는 맵 |
+
+맵마다 배경 이미지와 관성 시간이 다르므로, 현재 맵의 특성에 맞춰 입력 타이밍을 조절해야 합니다.
+
+## 6. 판정 기준
+
+판정은 `리시버 위치 - 플레이어 정지 위치` 값을 기준으로 계산됩니다.
+
+| 거리 조건 | 결과 |
+| --- | --- |
+| `0 < 거리 <= 25` | PERFECT |
+| `25 < 거리 <= 60` | GREAT |
+| `60 < 거리 <= 120` | GOOD |
+| `거리 <= 0` | FAIL |
+| `거리 > 120` | FAIL |
+
+핵심은 리시버를 지나치지 않고, 가능한 한 가까이 멈추는 것입니다.
+
+## 7. 점수 규칙
+
+| 판정 | 점수 |
+| --- | --- |
+| PERFECT | +1000 |
+| GREAT | +700 |
+| GOOD | +300 |
+| FAIL | 현재 점수 0점으로 초기화 |
+
+- `SCORE`: 현재 연속 점수입니다.
+- `BEST`: 게임을 진행하면서 기록한 최고 점수입니다.
+- `LAST`: 직전 라운드에서 얻은 점수입니다.
+
+## 8. 화면 구성
+
+- 타이틀 이미지: 게임 시작 화면을 표시합니다.
+- 플레이어 캐릭터: 달리기 상태와 도게자 상태에 따라 이미지가 바뀝니다.
+- 리시버 캐릭터: 플레이어가 멈춰야 하는 목표 지점입니다.
+- 상단 HUD: 현재 점수, 최고 점수, 맵 정보, 안내 문구를 표시합니다.
+- 결과 이미지: `PERFECT`, `GREAT`, `GOOD`, `FAIL` 판정을 표시합니다.
+
+## 9. 프로젝트 구조
+
+### 핵심 엔진 구조
+
+- `GameLoop.hpp`: 입력, 업데이트, 렌더링 루프 관리
+- `ObjectBase.hpp`: `GameObject`와 `Component` 기본 구조
+- `GraphicsContext.hpp`: DirectX 11 장치, 스왑체인, 렌더 상태 관리
+- `Mesh.hpp`: 정점 버퍼 생성
+- `Material.hpp`: 색상/텍스처 머티리얼 관리
+- `MeshRenderer.hpp`: 메시 렌더링 컴포넌트
+- `Texture.hpp`: PNG 텍스처 로드
+
+### 게임 로직
+
+- `DogezaTypes.hpp`: 게임 상태, 맵 타입, 판정 타입 정의
+- `DogezaComponents.hpp`: 게임 전용 컴포넌트 모음
+- `main.cpp`: 리소스 로드, 오브젝트 생성, 컴포넌트 조립, 게임 실행
+
+### 주요 게임 컴포넌트
+
+- `MapRandomizerComponent`: 맵 랜덤 선택과 관성 시간 제공
+- `DepthTargetComponent`: 리시버 목표 위치 관리
+- `ProneSlideComponent`: 플레이어 이동과 도게자 슬라이딩 처리
+- `JudgeComponent`: 정지 위치를 기준으로 판정 계산
+- `ScoreComponent`: 현재 점수, 최고 점수, 직전 점수 관리
+- `GameStateMachineComponent`: 게임 상태 전환 관리
+- `FollowCameraComponent`: 플레이어 깊이 위치를 따라가는 카메라 처리
+- `BackgroundZoomComponent`: 맵별 배경 표시와 화면 좌표 변환
+- `PlayerVisualComponent`: 플레이어 이미지 상태 전환
+- `ReceiverVisualComponent`: 리시버 위치 표시
+- `BitmapFontHudComponent`: 점수와 안내 문구 표시
+- `ResultImageOverlayComponent`: 결과 판정 이미지 표시
+
+## 10. 필요 환경
+
+- Windows
+- Visual Studio 2022
+- x64 빌드 환경
+- DirectX 11 지원 그래픽 환경
+
+## 11. 플레이 팁
+
+- `STOP` 맵은 리시버 근처에서 바로 눌러도 됩니다.
+- `SHORT` 맵은 약간 일찍 눌러야 합니다.
+- `LONG` 맵은 관성이 길기 때문에 더 멀리서 눌러야 합니다.
+- 리시버를 지나치면 무조건 실패하므로, 처음에는 조금 멀리 멈추는 쪽으로 연습하는 것이 좋습니다.
+
+## 12. 개발 의도
+
+이 프로젝트는 강의에서 제공된 `GameLoop - GameObject - Component` 구조를 유지하면서, 간단한 원버튼 타이밍 게임을 구현한 예제입니다.
+
+게임 로직을 `main.cpp`에 직접 작성하지 않고, 이동, 판정, 점수, 상태 전환, 화면 표시를 각각 컴포넌트로 분리했습니다.  
+이를 통해 기능별 역할이 명확해지고, 특정 기능을 수정할 때 다른 기능에 주는 영향을 줄일 수 있도록 구성했습니다.
