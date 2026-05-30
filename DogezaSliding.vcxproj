@@ -139,6 +139,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DogezaCameraView.hpp" />
     <ClInclude Include="DogezaComponents.hpp" />
     <ClInclude Include="DogezaTypes.hpp" />
     <ClInclude Include="Framework.hpp" />
