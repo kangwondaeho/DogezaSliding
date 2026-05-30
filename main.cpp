@@ -2,7 +2,7 @@
 
 #include "GameLoop.hpp"
 #include "MeshRenderer.hpp"
-#include "DogezaComponents.hpp"
+#include "DogezaCameraView.hpp"
 
 LRESULT CALLBACK GlobalWndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 {
@@ -128,18 +128,18 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE, LPSTR, int)
     manager->AddComponent(game);
     gEngine.world.push_back(manager);
 
-    GameObject* background = MakeRenderObject("SchoolBackgroundZoom", textureQuadMesh, backgroundMat);
-    auto* stageView = new StageViewComponent(game, backgroundMat, backgroundTex, backgroundShortTex, backgroundLongTex);
+    GameObject* background = new GameObject(0.0f, 0.0f, 0.0f, "SchoolBackgroundZoom");
+    auto* stageView = new StageViewFixedComponent(game, backgroundMat, backgroundTex, backgroundShortTex, backgroundLongTex);
     background->AddComponent(stageView);
     gEngine.world.push_back(background);
 
     GameObject* receiver = MakeRenderObject("DogezaReceiverNPC", textureQuadMesh, receiverTexMat);
-    receiver->AddComponent(new ReceiverSpriteComponent(game, stageView));
+    receiver->AddComponent(new ReceiverSpriteFixedComponent(game, stageView));
     gEngine.world.push_back(receiver);
 
     GameObject* player = MakeRenderObject("PlayerDogezaSlider", textureQuadMesh, playerRunMat);
     MeshRenderer* playerRenderer = player->GetComponent<MeshRenderer>();
-    player->AddComponent(new PlayerSpriteComponent(game, stageView, playerRenderer, playerRunMat, playerProneMat));
+    player->AddComponent(new PlayerSpriteFixedComponent(game, stageView, playerRenderer, playerRunMat, playerProneMat));
     gEngine.world.push_back(player);
 
     GameObject* topBar = MakeRenderObject("TopHudBar", colorQuadMesh, topBarMat);
