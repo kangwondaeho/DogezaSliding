@@ -234,112 +234,6 @@ public:
     void Render(GraphicsContext* gfx) override {}
 };
 
-class StageViewComponent : public Component
-{
-private:
-    DogezaGameComponent* game = nullptr;
-    TextureMaterial* material = nullptr;
-    Texture* stopTexture = nullptr;
-    Texture* shortTexture = nullptr;
-    Texture* longTexture = nullptr;
-
-public:
-    StageViewComponent(DogezaGameComponent* gameComp, TextureMaterial* mat,
-        Texture* stopTex, Texture* shortTex, Texture* longTex)
-        : game(gameComp), material(mat), stopTexture(stopTex), shortTexture(shortTex), longTexture(longTex) {}
-
-    void Start(GraphicsContext* gfx) override {}
-    void Input() override {}
-
-    void Update(float dt) override
-    {
-        if (!game || !material) return;
-        Texture* desired = stopTexture;
-        if (game->GetMapType() == MapType::SHORT_INERTIA) desired = shortTexture;
-        if (game->GetMapType() == MapType::LONG_INERTIA) desired = longTexture;
-        if (desired && material->GetTexture() != desired) material->SetTexture(desired);
-
-        float zoom = 1.05f + ClampF(game->GetCameraZ() * 0.0010f, 0.0f, 0.55f);
-        pOwner->pos = { 0.0f, -0.02f * (zoom - 1.0f), 0.0f };
-        pOwner->scale = { 2.10f * zoom, 2.10f * zoom, 1.0f };
-    }
-
-    ProjectedPoint ProjectZ(float worldZ, float laneX = 0.0f) const
-    {
-        float relZ = worldZ - (game ? game->GetCameraZ() : 0.0f);
-        float t = ClampF(relZ / 1050.0f, 0.0f, 1.0f);
-
-        ProjectedPoint p;
-        float laneHalf = 0.90f + (0.15f - 0.90f) * t;
-        p.x = laneX * laneHalf;
-        p.y = -0.82f + (0.46f + 0.82f) * t;
-        p.scale = 1.12f + (0.28f - 1.12f) * t;
-        p.visible = relZ > -120.0f && relZ < 1150.0f;
-        return p;
-    }
-
-    void Render(GraphicsContext* gfx) override {}
-};
-
-class PlayerSpriteComponent : public Component
-{
-private:
-    DogezaGameComponent* game = nullptr;
-    StageViewComponent* stage = nullptr;
-    MeshRenderer* renderer = nullptr;
-    Material* runMaterial = nullptr;
-    Material* proneMaterial = nullptr;
-
-public:
-    PlayerSpriteComponent(DogezaGameComponent* gameComp, StageViewComponent* stageComp,
-        MeshRenderer* meshRenderer, Material* runMat, Material* proneMat)
-        : game(gameComp), stage(stageComp), renderer(meshRenderer), runMaterial(runMat), proneMaterial(proneMat) {}
-
-    void Start(GraphicsContext* gfx) override {}
-    void Input() override {}
-
-    void Update(float dt) override
-    {
-        if (!game || !stage) return;
-        ProjectedPoint p = stage->ProjectZ(game->GetPlayerZ());
-        if (!p.visible) { pOwner->scale = { 0, 0, 1 }; return; }
-
-        if (renderer) renderer->pMaterial = game->IsProne() ? proneMaterial : runMaterial;
-        pOwner->pos = { p.x, p.y - 0.02f * p.scale, 0.0f };
-        pOwner->scale = game->IsProne()
-            ? XMFLOAT3{ 0.27f * p.scale, 0.09f * p.scale, 1.0f }
-            : XMFLOAT3{ 0.18f * p.scale, 0.25f * p.scale, 1.0f };
-        pOwner->rot = { 0.0f, 0.0f, game->IsProne() ? -0.04f : 0.0f };
-    }
-
-    void Render(GraphicsContext* gfx) override {}
-};
-
-class ReceiverSpriteComponent : public Component
-{
-private:
-    DogezaGameComponent* game = nullptr;
-    StageViewComponent* stage = nullptr;
-
-public:
-    ReceiverSpriteComponent(DogezaGameComponent* gameComp, StageViewComponent* stageComp)
-        : game(gameComp), stage(stageComp) {}
-
-    void Start(GraphicsContext* gfx) override {}
-    void Input() override {}
-
-    void Update(float dt) override
-    {
-        if (!game || !stage) return;
-        ProjectedPoint p = stage->ProjectZ(game->GetReceiverZ());
-        if (!p.visible) { pOwner->scale = { 0, 0, 1 }; return; }
-        pOwner->pos = { p.x, p.y + 0.02f * p.scale, 0.0f };
-        pOwner->scale = { 0.18f * p.scale, 0.28f * p.scale, 1.0f };
-    }
-
-    void Render(GraphicsContext* gfx) override {}
-};
-
 enum class GameUiRole { FontHud, TitleBackdrop, TitleCard, ResultImage };
 
 class GameUiComponent : public Component
@@ -371,10 +265,7 @@ public:
 
     GameUiComponent(DogezaGameComponent* gameComp, MeshRenderer* meshRenderer,
         float x = 0.0f, float y = 0.16f, float sx = 1.52f, float sy = 0.56f)
-        : role(GameUiRole::TitleCard), game(gameComp), renderer(meshRenderer)
-    {
-        pOwner = nullptr;
-    }
+        : role(GameUiRole::TitleCard), game(gameComp), renderer(meshRenderer) {}
 
     GameUiComponent(DogezaGameComponent* gameComp, MeshRenderer* meshRenderer,
         TextureMaterial* perfectMaterial, TextureMaterial* greatMaterial,
