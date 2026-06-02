@@ -3,6 +3,9 @@
 #include "Material.hpp"
 #include "MeshRenderer.hpp"
 #include "DogezaTypes.hpp"
+#include <mmsystem.h>
+
+#pragma comment(lib, "winmm.lib")
 
 inline float ClampF(float v, float lo, float hi)
 {
@@ -241,25 +244,30 @@ private:
     GameState lastState = GameState::TITLE;
     JudgeResult lastResult = JudgeResult::NONE;
 
+    void PlayFile(const wchar_t* path)
+    {
+        PlaySoundW(path, nullptr, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+    }
+
     void PlayRoundStart()
     {
-        MessageBeep(MB_OK);
+        PlayFile(L"assets\\sfx_ready.wav");
     }
 
     void PlayRunStart()
     {
-        MessageBeep(MB_ICONASTERISK);
+        PlayFile(L"assets\\sfx_run.wav");
     }
 
     void PlaySlideStart()
     {
-        MessageBeep(MB_ICONQUESTION);
+        PlayFile(L"assets\\sfx_slide.wav");
     }
 
     void PlayJudge(JudgeResult r)
     {
-        if (r == JudgeResult::FAIL) MessageBeep(MB_ICONHAND);
-        else if (r != JudgeResult::NONE) MessageBeep(MB_ICONEXCLAMATION);
+        if (r == JudgeResult::FAIL) PlayFile(L"assets\\sfx_fail.wav");
+        else if (r != JudgeResult::NONE) PlayFile(L"assets\\sfx_success.wav");
     }
 
 public:
