@@ -126,6 +126,7 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE, LPSTR, int)
     GameObject* manager = new GameObject(0.0f, 0.0f, 0.0f, "GameManagerObject");
     auto* game = new DogezaGameComponent();
     manager->AddComponent(game);
+    manager->AddComponent(new GameSoundComponent(game));
     gEngine.world.push_back(manager);
 
     GameObject* background = new GameObject(0.0f, 0.0f, 0.0f, "SchoolBackgroundZoom");
