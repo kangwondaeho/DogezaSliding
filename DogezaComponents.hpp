@@ -234,6 +234,74 @@ public:
     void Render(GraphicsContext* gfx) override {}
 };
 
+class GameSoundComponent : public Component
+{
+private:
+    DogezaGameComponent* game = nullptr;
+    GameState lastState = GameState::TITLE;
+    JudgeResult lastResult = JudgeResult::NONE;
+
+    void PlayRoundStart()
+    {
+        MessageBeep(MB_OK);
+    }
+
+    void PlayRunStart()
+    {
+        MessageBeep(MB_ICONASTERISK);
+    }
+
+    void PlaySlideStart()
+    {
+        MessageBeep(MB_ICONQUESTION);
+    }
+
+    void PlayJudge(JudgeResult r)
+    {
+        if (r == JudgeResult::FAIL) MessageBeep(MB_ICONHAND);
+        else if (r != JudgeResult::NONE) MessageBeep(MB_ICONEXCLAMATION);
+    }
+
+public:
+    GameSoundComponent(DogezaGameComponent* gameComp)
+        : game(gameComp) {}
+
+    void Start(GraphicsContext* gfx) override
+    {
+        if (!game) return;
+        lastState = game->GetState();
+        lastResult = game->GetResult();
+    }
+
+    void Input() override {}
+
+    void Update(float dt) override
+    {
+        if (!game) return;
+
+        GameState nowState = game->GetState();
+        JudgeResult nowResult = game->GetResult();
+
+        if (nowState != lastState)
+        {
+            if (nowState == GameState::READY) PlayRoundStart();
+            else if (nowState == GameState::APPROACH) PlayRunStart();
+            else if (nowState == GameState::PRONE_SLIDE) PlaySlideStart();
+            else if (nowState == GameState::JUDGE) PlayJudge(nowResult);
+
+            lastState = nowState;
+            lastResult = nowResult;
+        }
+        else if (nowState == GameState::JUDGE && nowResult != lastResult)
+        {
+            PlayJudge(nowResult);
+            lastResult = nowResult;
+        }
+    }
+
+    void Render(GraphicsContext* gfx) override {}
+};
+
 enum class GameUiRole { FontHud, TitleBackdrop, TitleCard, ResultImage };
 
 class GameUiComponent : public Component
