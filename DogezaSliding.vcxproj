@@ -172,6 +172,11 @@
     <None Include="assets\result_good.png" />
     <None Include="assets\result_great.png" />
     <None Include="assets\result_perfect.png" />
+    <None Include="assets\sfx_ready.wav" />
+    <None Include="assets\sfx_run.wav" />
+    <None Include="assets\sfx_slide.wav" />
+    <None Include="assets\sfx_success.wav" />
+    <None Include="assets\sfx_fail.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
